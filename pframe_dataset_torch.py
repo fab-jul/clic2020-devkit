@@ -8,8 +8,10 @@ import pframe_dataset_shared
 
 
 class YUVFramesDataset(Dataset):
-    """ Yields frames either as tuples (Y, U, V) or, if merge_channels=True, as a single tensor (YUV).
-    Dataformat is always torch default, CHW, and dtype is float32, output is in [0, 1] """
+    """
+    Yields frames either as tuples (Y, U, V) or, if merge_channels=True, as a single tensor (YUV).
+    Dataformat is always torch default, CHW, and dtype is float32, output is in [0, 1]
+    """
     def __init__(self, data_root, merge_channels=False):
         self.frame_ps = YUVFramesDataset.get_frames_paths(data_root)
         self.merge_channels = merge_channels

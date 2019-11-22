@@ -34,6 +34,7 @@ def show_torch():
     for image_pair, image_pair_444 in itertools.islice(zip(d, d_merged), 5):
         visualize(image_pair, image_pair_444)
 
+    # TODO
     # dl = DataLoader(d, batch_size=10, shuffle=True, num_workers=2)
     # for batch in dl:
     #     ...
