@@ -33,8 +33,8 @@ class YUVFramesDataset(Dataset):
 
 
 class FramePairsDataset(Dataset):
-    def __init__(self, base_glob, merge_channels=False):
-        self.yuv_frames_dataset = YUVFramesDataset(base_glob, merge_channels)
+    def __init__(self, data_root, merge_channels=False):
+        self.yuv_frames_dataset = YUVFramesDataset(data_root, merge_channels)
 
     def __getitem__(self, idx):
         frame_1 = self.yuv_frames_dataset[idx]
