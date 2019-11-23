@@ -7,7 +7,7 @@
 ## P-Frame Dataloading
 
 We have data loaders for PyTorch and TensorFlow. By default, they yield pairs of frames, where each frame is represented 
-as a tuple (Y, U, V). The dimensions of U and V are half the those of Y (422 format):
+as a tuple (Y, U, V). The dimensions of U and V are half the those of Y (420 format):
 
 ```
     [ ((Y1, U1, V1), (Y2, U2, V2))  # pair 1
