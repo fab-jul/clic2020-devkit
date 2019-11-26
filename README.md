@@ -38,6 +38,8 @@ ds_444 = ds_torch.FramePairsDataset(data_root='data', merge_channels=True)
 
 ### TensorFlow Example
 
+Code tested in eager and graph mode, in TensorFlow 1.15. _TODO_ Test in TensorFlow 2.0.
+
 ```python 
 import pframe_dataset_tf as ds_tf
 
