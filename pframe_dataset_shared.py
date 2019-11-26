@@ -15,6 +15,8 @@ def get_yuv_globs(data_root):
         ...
       video2/
         ...
+
+    :returns globs (as strings) for Y, U, V frames
     """
     subfolder_glob = os.path.join(data_root, '*')
     y_glob, u_glob, v_glob = (os.path.join(subfolder_glob, '*' + suffix)
@@ -23,6 +25,7 @@ def get_yuv_globs(data_root):
 
 
 def validate_data(data_root):
+    """ Check if for every frame we have Y, U, V files. TODO: call from download.sh """
     globs = get_yuv_globs(data_root)
     files = tuple(glob.glob(g) for g in globs)
     assert len(files[0]) > 0, 'No files found in {}'.format(data_root)

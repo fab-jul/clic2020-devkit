@@ -1,3 +1,7 @@
+"""
+Code to test the dataset functions.
+"""
+
 import itertools
 import numpy as np
 from matplotlib import pyplot as plt
