@@ -3,6 +3,12 @@ import tensorflow as tf
 
 
 def frame_pairs_dataset(data_root, merge_channels=False):
+    """
+    Create a tf.data.Dataset that yields frames either as tuples (Y, U, V) or, if merge_channels=True,
+    as a single tensor (YUV).
+
+    Dataformat is always HWC, and dtype is uint8, output is in {0, ..., 127} (non-normalized).
+    """
     # all frames, i.e., frames 0, 1, 2, 3, ...
     d_a = yuv_dataset(data_root)
     # same, but skip first frame, i.e., frames 1, 2, 3, ...
@@ -12,6 +18,12 @@ def frame_pairs_dataset(data_root, merge_channels=False):
         d_b = d_b.map(yuv_422_to_444)
     # zip together, so we get pairs (0, 1), (1, 2), (2, 3), ...
     return tf.data.Dataset.zip((d_a, d_b))
+
+
+def yuv_dataset(data_root):
+    y, u, v = (tf.data.Dataset.list_files(glob, shuffle=False).map(load_frame)
+               for glob in pframe_dataset_shared.get_yuv_globs(data_root))
+    return tf.data.Dataset.zip((y, u, v))
 
 
 def yuv_422_to_444(y, u, v):
@@ -31,10 +43,4 @@ def _upsample_nearest_neighbor(t, factor=2):
 
 def load_frame(p):
     return tf.image.decode_png(tf.io.read_file(p))
-
-
-def yuv_dataset(data_root):
-    y, u, v = (tf.data.Dataset.list_files(glob, shuffle=False).map(load_frame)
-               for glob in pframe_dataset_shared.get_yuv_globs(data_root))
-    return tf.data.Dataset.zip((y, u, v))
 
