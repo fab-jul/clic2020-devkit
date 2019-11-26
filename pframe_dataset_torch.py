@@ -30,7 +30,7 @@ class YUVFramesDataset(Dataset):
         y, u, v = (to_tensor(Image.open(p)) for p in self.frame_ps[idx])
         if not self.merge_channels:
             return y, u, v
-        yuv = yuv_422_to_444(y, u, v)
+        yuv = yuv_420_to_444(y, u, v)
         return yuv
 
 
@@ -48,8 +48,8 @@ class FramePairsDataset(Dataset):
         return len(self.yuv_frames_dataset) - 1
 
 
-def yuv_422_to_444(y, u, v):
-    """ Convert Y, U, V, given in 422, to RGB 444. Expects CHW dataformat """
+def yuv_420_to_444(y, u, v):
+    """ Convert Y, U, V, given in 420, to RGB 444. Expects CHW dataformat """
     u, v = map(_upsample_nearest_neighbor, (u, v))  # upsample U, V
     return torch.cat((y, u, v), dim=0)    # merge
 

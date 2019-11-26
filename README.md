@@ -32,7 +32,7 @@ To get a single YUV tensor, we also provide a way to load merged YUV tensors (44
 ```python
 import pframe_dataset_tf as ds_torch
 
-ds_422 = ds_torch.FramePairsDataset(data_root='data')
+ds_420 = ds_torch.FramePairsDataset(data_root='data')
 ds_444 = ds_torch.FramePairsDataset(data_root='data', merge_channels=True)
 ```
 
@@ -43,7 +43,7 @@ Code tested in eager and graph mode, in TensorFlow 1.15. _TODO_ Test in TensorFl
 ```python 
 import pframe_dataset_tf as ds_tf
 
-ds_422 = ds_tf.frame_pairs_dataset(data_root='data')
+ds_420 = ds_tf.frame_pairs_dataset(data_root='data')
 ds_444 = ds_tf.frame_pairs_dataset(data_root='data', merge_channels=True)
 ```
 
