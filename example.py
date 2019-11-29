@@ -57,17 +57,17 @@ def show_tf_eager():
 def show_tf_graph():
     tf.disable_eager_execution()
     d = ds_tf.frame_pairs_dataset('data')
-    d_rgb = ds_tf.frame_pairs_dataset('data', merge_channels=True)
+    d_merged = ds_tf.frame_pairs_dataset('data', merge_channels=True)
 
     it = d.make_one_shot_iterator()
     ne = it.get_next()
 
-    it = d_rgb.make_one_shot_iterator()
-    ne_rgb = it.get_next()
+    it = d_merged.make_one_shot_iterator()
+    ne_merged = it.get_next()
 
     with tf.Session() as sess:
         for _ in range(3):
-            image_pair, image_pair_444 = sess.run([ne, ne_rgb])
+            image_pair, image_pair_444 = sess.run([ne, ne_merged])
             visualize(image_pair, image_pair_444)
 
 def main():
