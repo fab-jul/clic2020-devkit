@@ -2,7 +2,19 @@
 
 ## Downloading data
 
-*_Upcoming_*
+To download all files, run:
+
+```bash
+bash download.sh path/to/data
+```
+
+It will create a folder `path/to/data` and extract all frames there, into a structure like:
+
+```python
+TODO
+```
+
+For this, one of `gsutil`, `wget`, or `curl` must be available. Downloads can be interrupted.
 
 ## P-Frame Baseline
 
