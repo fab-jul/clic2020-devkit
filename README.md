@@ -16,6 +16,8 @@ TODO
 
 For this, one of `gsutil`, `wget`, or `curl` must be available. Downloads can be interrupted.
 
+TODO: Test `curl`
+
 ## P-Frame Baseline
 
 *_Upcoming_*
