@@ -24,6 +24,8 @@ TODO: Test `curl`
 
 ## P-Frame Dataloading
 
+# TODO: requirements.txt
+
 We have data loaders for PyTorch and TensorFlow. By default, they yield pairs of frames, where each frame is represented 
 as a tuple (Y, U, V). The dimensions of U and V are half the those of Y (420 format):
 

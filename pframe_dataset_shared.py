@@ -31,7 +31,7 @@ def get_yuv_globs(data_root):
 
 
 def validate_data(data_root):
-    """ Check if for every frame we have Y, U, V files. TODO: call from download.sh """
+    """ Check if for every frame we have Y, U, V files. """
     globs = get_yuv_globs(data_root)
     all_ps = tuple(sorted(glob.glob(g)) for g in globs)
     assert len(all_ps[0]) > 0, 'No files found in {}'.format(data_root)

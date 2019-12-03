@@ -27,6 +27,7 @@ GSUTIL_URL=TODO
 PARALLEL_CONNECTIONS=16
 
 function progress () {
+    NUM_FILES=$1
     COUNTER=0
     while read LINE; do
         COUNTER=$((COUNTER+1))
@@ -74,9 +75,9 @@ function download_wget_or_curl() {
   echo "Downloading to $OUTPUT_DIR..."
   pushd $OUTPUT_DIR
   if [[ $WGET_AVAILABLE == 1 ]]; then
-    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} wget -c {} -q 2>&1 | progress
+    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} wget -c {} -q 2>&1 | progress $NUM_FILES
   else
-    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} curl -O {} -s -C - 2>&1 | progress
+    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} curl -O {} -s -C - 2>&1 | progress $NUM_FILES
   fi
 
   popd
