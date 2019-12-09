@@ -15,7 +15,9 @@ Algorithm:
       1. get Residual_Normalized from JPG in Bistream
       2. F2' = F1 + ( Residual_normalized - 127 ) * 2
 """
-import torch
+
+# TODO: more like baseline_np.py actually
+
 import argparse
 from io import BytesIO
 from PIL import Image
@@ -43,16 +45,12 @@ def decoder(frame1, frame2_compressed: bytes):
     return frame1 + (residual_normalized - 127) * 2
 
 
-def torch_image_to_numpy(t):
-    """ Convert CHW normalized float32 (image) torch tensor to HWC numpy array """
-    return t.mul(255).round().to(torch.uint8).permute(1, 2, 0).detach().cpu().numpy()
-
-
 def compress_folder(data_dir):
-    ds = FramePairsDataset(data_dir) #, merge_channels=True)
+    ds = FramePairsDataset(data_dir)
+    # Make sure that we do not convert to torch!
     ds.yuv_frames_dataset.image_to_tensor = lambda pic: np.array(pic)
     N = len(ds)
-    idxs = np.arange(N)
+    idxs = np.arange(N)  # TODO: remove, maybe average over videos?
     np.random.shuffle(idxs)
     metrics = []
     for count, i in enumerate(idxs):
@@ -74,6 +72,7 @@ def compress_folder(data_dir):
         print('{: 10d}/{}: {:.4f} bpp // {:.4f} weighted MS-SSIM'.format(count, N, bpp, ms_ssim))
 
     # TODO output metrics
+
 
 def _batch(c):
     return np.expand_dims(np.expand_dims(c, -1), 0)
