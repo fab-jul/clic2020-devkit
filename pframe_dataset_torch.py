@@ -1,5 +1,6 @@
 import torch
 from PIL import Image
+import os
 import glob
 from torch.utils.data.dataset import Dataset
 from torch.nn import functional as F
@@ -7,21 +8,33 @@ import pframe_dataset_shared
 import numpy as np
 
 
+# TODO: this only works for folders with ALL frames!
+# TODO: this is actually incorrect as it will overlap videos!!
+
+
 class YUVFramesDataset(Dataset):
     """
     Yields frames either as tuples (Y, U, V) or, if merge_channels=True, as a single tensor (YUV).
     Dataformat is always torch default, CHW, and dtype is float32, output is in [0, 1]
     """
-    def __init__(self, data_root, merge_channels=False):
-        self.frame_ps = YUVFramesDataset.get_frames_paths(data_root)
+    def __init__(self, data_root, merge_channels=False, filter_names=None):
+        """
+        :param data_root:
+        :param merge_channels:
+        :param filter_names: If not None, must be a list of file names. Will only return files in this list.
+        """
+        self.frame_ps = YUVFramesDataset.get_frames_paths(data_root, filter_names)
         self.merge_channels = merge_channels
         self.image_to_tensor = lambda pic: image_to_tensor(pic, normalize=True)
 
     @staticmethod
-    def get_frames_paths(data_root):
+    def get_frames_paths(data_root, filter_names=None):
         """ :return a list of tuples, [(Y, U, V)]"""
         globs = pframe_dataset_shared.get_yuv_globs(data_root)
-        ys, us, vs = (sorted(glob.glob(g)) for g in globs)
+        if filter_names:
+            filter_names = set(filter_names)
+        ys, us, vs = (sorted(p for p in glob.glob(g))
+                      for g in globs)
         return list(zip(ys, us, vs))
 
     def __len__(self):
