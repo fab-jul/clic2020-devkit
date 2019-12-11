@@ -1,3 +1,13 @@
+# Status
+
+This is work in progress.
+
+Todos:
+- [x] Make sure PyTorch dataloader respects video boundaries
+- [ ] Make sure TensorFlow dataloader respects video boundaries
+- [ ] Fix download.sh
+- [ ] Cleanup Baseline
+
 # clic2020-devkit
 
 ## Downloading data

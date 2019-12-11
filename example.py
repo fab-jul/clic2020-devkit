@@ -32,8 +32,8 @@ def visualize(image_pair, image_pair_444):
 
 
 def show_torch():
-    d = ds_torch.FramePairsDataset('data')
-    d_merged = ds_torch.FramePairsDataset('data', merge_channels=True)
+    d = ds_torch.YUVFramesDataset('data/frames')
+    d_merged = ds_torch.YUVFramesDataset('data/frames', merge_channels=True)
 
     for image_pair, image_pair_444 in itertools.islice(zip(d, d_merged), 5):
         visualize(image_pair, image_pair_444)
@@ -56,8 +56,8 @@ def show_tf_eager():
 
 def show_tf_graph():
     tf.disable_eager_execution()
-    d = ds_tf.frame_pairs_dataset('data')
-    d_merged = ds_tf.frame_pairs_dataset('data', merge_channels=True)
+    d = ds_tf.frame_pairs_dataset('data/frames')
+    d_merged = ds_tf.frame_pairs_dataset('data/frames', merge_channels=True)
 
     it = d.make_one_shot_iterator()
     ne = it.get_next()
