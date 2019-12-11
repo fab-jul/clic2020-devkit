@@ -4,13 +4,14 @@ This is work in progress.
 
 Todos:
 - [x] Make sure PyTorch dataloader respects video boundaries
-- [ ] Make sure TensorFlow dataloader respects video boundaries
+- [x] Make sure TensorFlow dataloader respects video boundaries
 - [ ] Fix download.sh
 - [ ] Cleanup Baseline
+- [ ] Add requirements.txt
 
 # clic2020-devkit
 
-## Downloading data
+<!-- ## Downloading data
 
 To download all files, run:
 
@@ -28,13 +29,14 @@ For this, one of `gsutil`, `wget`, or `curl` must be available. Downloads can be
 
 TODO: Test `curl`
 
+-->
+
 ## P-Frame Baseline
 
 *_Upcoming_*
 
 ## P-Frame Dataloading
 
-# TODO: requirements.txt
 
 We have data loaders for PyTorch and TensorFlow. By default, they yield pairs of frames, where each frame is represented 
 as a tuple (Y, U, V). The dimensions of U and V are half the those of Y (420 format):
@@ -58,8 +60,8 @@ To get a single YUV tensor, we also provide a way to load merged YUV tensors (44
 ```python
 import pframe_dataset_tf as ds_torch
 
-ds_420 = ds_torch.YUVFramesDataset(data_root='data')
-ds_444 = ds_torch.YUVFramesDataset(data_root='data', merge_channels=True)
+ds_420 = ds_torch.FrameSequenceDataset(data_root='data')
+ds_444 = ds_torch.FrameSequenceDataset(data_root='data', merge_channels=True)
 ```
 
 ### TensorFlow Example
@@ -69,8 +71,8 @@ Code tested in eager and graph mode, in TensorFlow 1.15. _TODO_ Test in TensorFl
 ```python 
 import pframe_dataset_tf as ds_tf
 
-ds_420 = ds_tf.frame_pairs_dataset(data_root='data')
-ds_444 = ds_tf.frame_pairs_dataset(data_root='data', merge_channels=True)
+ds_420 = ds_tf.frame_sequence_dataset(data_root='data')
+ds_444 = ds_tf.frame_sequence_dataset(data_root='data', merge_channels=True)
 ```
 
 

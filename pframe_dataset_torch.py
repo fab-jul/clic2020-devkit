@@ -6,17 +6,21 @@ import pframe_dataset_shared
 import numpy as np
 
 
-class YUVFramesDataset(Dataset):
+class FrameSequenceDataset(Dataset):
     """
-    Yields frames either as tuples (Y, U, V) or, if merge_channels=True, as a single tensor (YUV).
-    Dataformat is always torch default, CHW, and dtype is float32, output is in [0, 1]
+    Create a Dataset that yields sequences of `num_frames` frames, e.g.:
+        first element:  ( (f11_y, f11_u, f11_v), (f12_y, f12_u, f12_v) ),  # tuple for video 1, frame 1, 2
+        second element: ( (f12_y, f12_u, f12_v), (f13_y, f13_u, f13_v) ),  # tuple for video 1, frame 2, 3
+
+    If merge_channels=True, the channels are merged into one tensor, yielding
+        first element:  ( f11, f12 ),  # for video 1, frame 1, 2
+        second element: ( f12, f13 ),  # for video 1, frame 2, 3
+
+    Dataformat is always torch-default CHW, and dtype is float32, output is in [0, 1]
     """
-    def __init__(self, data_root, merge_channels=False, num_frames=2):
-        """
-        :param data_root:
-        :param merge_channels:
-        """
-        self.tuple_ps = pframe_dataset_shared.get_frame_tuple_paths(data_root, num_frames_per_tuple=num_frames)
+    def __init__(self, data_root, merge_channels=False, num_frames_per_sequence=2):
+        self.tuple_ps = pframe_dataset_shared.get_paths_for_frame_sequences(
+                data_root, num_frames_per_sequence=num_frames_per_sequence)
         self.merge_channels = merge_channels
         self.image_to_tensor = lambda pic: image_to_tensor(pic, normalize=True)
 
