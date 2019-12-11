@@ -1,15 +1,9 @@
 import torch
 from PIL import Image
-import os
-import glob
 from torch.utils.data.dataset import Dataset
 from torch.nn import functional as F
 import pframe_dataset_shared
 import numpy as np
-
-
-# TODO: this only works for folders with ALL frames!
-# TODO: this is actually incorrect as it will overlap videos!!
 
 
 class YUVFramesDataset(Dataset):
@@ -17,51 +11,31 @@ class YUVFramesDataset(Dataset):
     Yields frames either as tuples (Y, U, V) or, if merge_channels=True, as a single tensor (YUV).
     Dataformat is always torch default, CHW, and dtype is float32, output is in [0, 1]
     """
-    def __init__(self, data_root, merge_channels=False, filter_names=None):
+    def __init__(self, data_root, merge_channels=False, num_frames=2):
         """
         :param data_root:
         :param merge_channels:
-        :param filter_names: If not None, must be a list of file names. Will only return files in this list.
         """
-        self.frame_ps = YUVFramesDataset.get_frames_paths(data_root, filter_names)
+        self.tuple_ps = pframe_dataset_shared.get_frame_tuple_paths(data_root, num_frames_per_tuple=num_frames)
         self.merge_channels = merge_channels
         self.image_to_tensor = lambda pic: image_to_tensor(pic, normalize=True)
 
-    @staticmethod
-    def get_frames_paths(data_root, filter_names=None):
-        """ :return a list of tuples, [(Y, U, V)]"""
-        globs = pframe_dataset_shared.get_yuv_globs(data_root)
-        if filter_names:
-            filter_names = set(filter_names)
-        ys, us, vs = (sorted(p for p in glob.glob(g))
-                      for g in globs)
-        return list(zip(ys, us, vs))
-
     def __len__(self):
-        return len(self.frame_ps)
+        return len(self.tuple_ps)
 
     def __getitem__(self, idx):
-        y, u, v = (self.image_to_tensor(Image.open(p)) for p in self.frame_ps[idx])
+        # this is a tuple of tuple, e.g.,
+        #    ( (f21_y, f21_u, f21_v), (f22_y, f22_u, f22_v) )
+        frame_seq = self.tuple_ps[idx]
+        return tuple(self.load_frame(y_p, u_p, v_p)
+                     for y_p, u_p, v_p in frame_seq)
+
+    def load_frame(self, y_p, u_p, v_p):
+        y, u, v = (self.image_to_tensor(Image.open(p)) for p in (y_p, u_p, v_p))
         if not self.merge_channels:
             return y, u, v
         yuv = yuv_420_to_444(y, u, v)
         return yuv
-
-
-class FramePairsDataset(Dataset):
-    def __init__(self, data_root, merge_channels=False):
-        self.yuv_frames_dataset = YUVFramesDataset(data_root, merge_channels)
-        if len(self.yuv_frames_dataset) == 0:
-            raise ValueError('No frames found in {}'.format(data_root))
-
-    def __getitem__(self, idx):
-        frame_1 = self.yuv_frames_dataset[idx]
-        frame_2 = self.yuv_frames_dataset[idx + 1]
-        return frame_1, frame_2
-
-    def __len__(self):
-        # substract one because we always look at tuples, final one is (N-1, N)
-        return len(self.yuv_frames_dataset) - 1
 
 
 def yuv_420_to_444(y, u, v):

@@ -12,22 +12,91 @@ def get_yuv_globs(data_root):
     """
     Expected structure:
     `root_dir`/
-      video1_frame1_y.png
-      video1_frame1_u.png
-      video1_frame1_v.png
-      video1_frame2_y.png
-      ...
-      video2_frame1_y.png
-      video2_frame1_u.png
-      video2_frame1_v.png
-      video2_frame2_y.png
-      ...
-
+        video1/
+            video1_frame1_y.png
+            video1_frame1_u.png
+            video1_frame1_v.png
+            video1_frame2_y.png
+            ...
+        video2/
+            video2_frame1_y.png
+            video2_frame1_u.png
+            video2_frame1_v.png
+            video2_frame2_y.png
+            ...
+        ...
     :returns globs (as strings) for Y, U, V frames
     """
-    y_glob, u_glob, v_glob = (os.path.join(data_root, '*' + suffix)
+    y_glob, u_glob, v_glob = (os.path.join(data_root, '*', '*' + suffix)
                               for suffix in _SUFFIXES)
     return y_glob, u_glob, v_glob
+
+
+def get_frame_tuple_paths(data_root, num_frames_per_tuple):
+    """
+    :return [((f11_y, f11_u, f11_v), (f12_y, f12_u, f12_v)),  # tuple for video 1, frame 1, 2
+             ((f12_y, f12_u, f12_v), (f13_y, f13_u, f13_v)),  # tuple for video 1, frame 2, 3
+             ...                                              # rest of video 1
+             ((f21_y, f21_u, f21_v), (f22_y, f22_u, f22_v)),  # tuple for video 2, frame 1, 2
+             ((f22_y, f22_u, f22_v), (f23_y, f23_u, f23_v)),  # tuple for video 2, frame 2, 3
+             ...
+    """
+    globs = get_yuv_globs(data_root)
+    y_ps, u_ps, v_ps = (sorted(p for p in glob.glob(g)) for g in globs)
+    assert len(y_ps) == len(u_ps) == len(v_ps)
+    assert len(y_ps) > 0, 'No frames in {}'.format(data_root)
+    out = []
+    for y_p, u_p, v_p in zip(y_ps, u_ps, v_ps):
+        # first frame of the sequence
+        seq = [(y_p, u_p, v_p)]
+        # get subsequent frames
+        for offset in range(1, num_frames_per_tuple):
+            yi_p, ui_p, vi_p = (get_frame_path(p, offset=offset) for p in (y_p, u_p, v_p))
+            if not os.path.isfile(yi_p):
+                # This happens on the final frame of the video, when no subsequent frames are available!
+                seq = None
+                break
+            seq.append((yi_p, ui_p, vi_p))
+        if seq:
+            assert len(seq) == num_frames_per_tuple
+            out.append(seq)
+    return out
+
+
+_COMPONENTS_RE = re.compile(r'(.*?)_(\d{5})_([yuv]\.png)')
+_COMPONENTS_RE_SUB = r'\1_{:05d}_\3'
+
+
+def get_previous_frame_path(p):
+    """Vlog_720P-7b30_00338_u.png"""
+    return get_frame_path(p, offset=-1)
+
+
+def get_frame_path(p, offset):
+    dirname, basename = os.path.split(p)
+    m = _COMPONENTS_RE.search(basename)
+    if not m:
+        raise ValueError('Invalid format: {}'.format(p))
+    try:
+        number = int(m.group(2))
+    except ValueError:
+        raise ValueError('Invalid format: {}'.format(p))
+    new_number = number + offset
+    new_basename = _COMPONENTS_RE.sub(_COMPONENTS_RE_SUB.format(new_number), basename)
+    return os.path.join(dirname, new_basename)
+
+
+def get_validation_filenames():
+    output = []
+    for fn in ('static-pframe_inputs_valid.txt', 'static-pframe_targets_valid.txt'):
+        p = os.path.join(os.path.dirname(__file__), fn)
+        if not os.path.isfile(p):
+            raise FileNotFoundError('Expected {}'.format(p))
+        with open(p, 'r') as f:
+            output.append(list(filter(None, f.read().split('\n'))))
+    inputs, targets = output
+    assert len(inputs) == len(targets), '{} != {}'.format(len(inputs), len(targets))
+    return output  # return inputs, targets
 
 
 def validate_data(data_root):
@@ -59,3 +128,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
