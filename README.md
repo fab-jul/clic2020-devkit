@@ -58,8 +58,8 @@ To get a single YUV tensor, we also provide a way to load merged YUV tensors (44
 ```python
 import pframe_dataset_tf as ds_torch
 
-ds_420 = ds_torch.FramePairsDataset(data_root='data')
-ds_444 = ds_torch.FramePairsDataset(data_root='data', merge_channels=True)
+ds_420 = ds_torch.YUVFramesDataset(data_root='data')
+ds_444 = ds_torch.YUVFramesDataset(data_root='data', merge_channels=True)
 ```
 
 ### TensorFlow Example
