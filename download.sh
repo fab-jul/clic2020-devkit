@@ -91,6 +91,8 @@ function unzip_all() {
   popd
 }
 
+# Main #########################################################################
+
 which gsutil
 if [[ $? == 0 ]]; then
   echo "Found gsutil, using it..."

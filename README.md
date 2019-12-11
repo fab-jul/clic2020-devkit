@@ -7,7 +7,6 @@ Todos:
 - [x] Make sure TensorFlow dataloader respects video boundaries
 - [ ] Fix download.sh
 - [ ] Cleanup Baseline
-- [ ] Add requirements.txt
 
 # clic2020-devkit
 
