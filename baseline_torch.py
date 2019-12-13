@@ -25,6 +25,7 @@ import time
 from io import BytesIO
 from PIL import Image
 import os
+import glob
 import pframe_dataset_shared
 
 import numpy as np
@@ -64,25 +65,21 @@ def decode(p):
 def compress_folder(data_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
-    inputs, targets = pframe_dataset_shared.get_validation_filenames()
-    # ds = FramePairsDataset(data_dir, filter_names=pframe_dataset_shared.get_validation_filenames())
-    # Make sure that we do not convert to torch!
-    # ds.yuv_frames_dataset.image_to_tensor = lambda pic: np.array(pic)
-    N = len(inputs)
-    idxs = np.arange(N)  # TODO: remove, maybe average over videos?
-    np.random.shuffle(idxs)
-    # metrics = []
-    skipping = set()
-    start = time.time()
-    for count, i in enumerate(idxs):
-        p1, p2 = os.path.join(data_dir, inputs[i]), os.path.join(data_dir, targets[i])
-        if not os.path.isfile(p1):
-            skipping.add(p1)
-            continue
-        if not os.path.isfile(p2):
-            skipping.add(p2)
-            continue
+    inputs = os.path.join(data_dir, 'inputs')
+    targets = os.path.join(data_dir, 'targets')
+    assert os.path.isdir(inputs), inputs
+    assert os.path.isdir(targets), targets
 
+    inputs = sorted(glob.glob(os.path.join(inputs, '*.png')))
+    targets = sorted(glob.glob(os.path.join(targets, '*.png')))
+    assert len(inputs) == len(targets)
+    assert len(inputs) > 0
+
+    N = len(inputs)
+    start = time.time()
+    for count, (p1, p2) in enumerate(zip(inputs, targets)):
+        p2_expected = pframe_dataset_shared.get_frame_path(p1, offset=1)
+        assert os.path.basename(p2_expected) == os.path.basename(p2), (p1, p2)
         i1, i2 = np.array(Image.open(p1)), np.array(Image.open(p2))
         # (y1, u1, v1), (y2, u2, v2) = ...
 
@@ -94,8 +91,8 @@ def compress_folder(data_dir, output_dir):
             elapsed = time.time() - start
             per_img = elapsed / count
             remaining = (N - count) * per_img
-            print('\rWrote {}/{} files. Skipped {}. Time: {:.1f}s // {:.3e} per img // ~{:.1f}s remaining'.format(
-                    count, N, len(skipping), elapsed, per_img, remaining), end='', flush=True)
+            print('\rWrote {}/{} files. Time: {:.1f}s // {:.3e} per img // ~{:.1f}s remaining'.format(
+                    count, N, elapsed, per_img, remaining), end='', flush=True)
         continue
 
         num_bytes = 0

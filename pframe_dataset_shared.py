@@ -94,19 +94,6 @@ def get_frame_path(p, offset):
     return os.path.join(dirname, new_basename)
 
 
-def get_validation_filenames():
-    output = []
-    for fn in ('static-pframe_inputs_valid.txt', 'static-pframe_targets_valid.txt'):
-        p = os.path.join(os.path.dirname(__file__), fn)
-        if not os.path.isfile(p):
-            raise FileNotFoundError('Expected {}'.format(p))
-        with open(p, 'r') as f:
-            output.append(list(filter(None, f.read().split('\n'))))
-    inputs, targets = output
-    assert len(inputs) == len(targets), '{} != {}'.format(len(inputs), len(targets))
-    return output  # return inputs, targets
-
-
 def validate_data(data_root):
     """ Check if for every frame we have Y, U, V files. """
     # check all files are available
