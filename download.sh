@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# bash download.sh OUTPUT_DIR [--max_videos MAX_VIDEOS] [--validation_only]
+# bash download.sh OUTPUT_DIR [--max_videos MAX_VIDEOS] [--delete_zip]
 #
 # Uses gsutil if available, otherwise wget if available, otherwise curl. One must be available
 # Downloads are continued
@@ -9,7 +9,7 @@
 # Tested on macOS
 #
 
-USAGE="USAGE: $0 OUTPUT_DIR [--max_videos MAX_VIDEOS]"
+USAGE="USAGE: $0 OUTPUT_DIR [--max_videos MAX_VIDEOS] [--delete_zip]"
 
 # Argument Parsing -------------------------------------------------------------
 
@@ -33,8 +33,8 @@ while [[ $# -gt 0 ]]; do
       shift; shift;
       continue
       ;;
-    --validation_only)
-      VALIDATION_ONLY=1
+    --delete_zip)
+      DELETE_ZIP=1
       shift;
       continue
       ;;
@@ -43,6 +43,14 @@ while [[ $# -gt 0 ]]; do
       exit 1
   esac
 done
+
+if [[ -n $DELETE_ZIP ]]; then
+  echo "WARN: --delete_zip given."
+  echo "  Will delete each .zip file after decoding."
+  echo "  This means less hard drive space used at any time, however,"
+  echo "  you can not cancel and resume the script anymore."
+fi
+
 
 # this is a bit fragile because macOS doesn't support readlink -f. Oh well.
 SCRIPT_DIR=$(dirname "$0")
@@ -125,6 +133,9 @@ function unzip_all() {
   for f in *.zip; do
     echo "$f"
     unzip -qu $f
+    if [[ -n $DELETE_ZIP ]]; then
+      rm $f
+    fi
   done | progress Unzipping $NUM_FILES
   popd
 }
@@ -147,5 +158,8 @@ echo "Done, validating..."
 python "$SCRIPT_DIR/pframe_dataset_shared.py" --validate "$OUTPUT_DIR"
 
 if [[ $? == 0 ]]; then
-  echo "All good! You may now want to remove the *.zip files in $OUTPUT_DIR"
+  echo "All good!"
+  if [[ -z $DELETE_ZIP ]]; then
+    echo "You may now want to remove the *.zip files in $OUTPUT_DIR"
+  fi
 fi
