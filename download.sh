@@ -53,16 +53,18 @@ PARALLEL_CONNECTIONS=16
 # Helper -----------------------------------------------------------------------
 
 function progress () {
-    NUM_FILES=$1
+    INFO=$1
+    NUM_FILES=$2
     COUNTER=0
     while read LINE; do
         COUNTER=$((COUNTER+1))
-        echo -ne "\rDownloading with $PARALLEL_CONNECTIONS connections; $COUNTER/$NUM_FILES; ...${LINE: -30};"
+        echo -ne "\r$INFO; $COUNTER/$NUM_FILES; ...${LINE: -30};"
     done
     echo ""
 }
 
 function download_gsutil() {
+  mkdir -pv "$OUTPUT_DIR"
   gsutil -m rsync $GSUTIL_URL "$OUTPUT_DIR"
 }
 
@@ -106,10 +108,11 @@ function download_wget_or_curl() {
     fi
   }
 
+  INFO="Downloading with $PARALLEL_CONNECTIONS connections"
   if [[ $WGET_AVAILABLE == 1 ]]; then
-    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} wget -c {} -q 2>&1 | progress $NUM_FILES
+    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} wget -c {} -q 2>&1 | progress "$INFO" $NUM_FILES
   else
-    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} curl -O {} -s -C - 2>&1 | progress $NUM_FILES
+    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} curl -O {} -s -C - 2>&1 | progress "$INFO" $NUM_FILES
   fi
 
   popd
@@ -120,22 +123,25 @@ function unzip_all() {
   # TODO(fabian) could add GNU parallel support here to make things faster
   # TODO(fabian) could remove zips after unzipping?
   for f in *.zip; do
-    unzip -u $f
-  done
+    echo "$f"
+    unzip -qu $f
+  done | progress Unzipping $NUM_FILES
   popd
 }
 
 # Main -------------------------------------------------------------------------
 
-which gsutil
+which gsutil >/dev/null
 # gsutil does not support $MAX_VIDEOS!
 if [[ $? == 0 && -z $MAX_VIDEOS ]]; then
   echo "Found gsutil, using it..."
   download_gsutil
 else
   download_wget_or_curl
-  unzip_all
 fi
+
+echo "Unzipping..."
+unzip_all
 
 echo "Done, validating..."
 python "$SCRIPT_DIR/pframe_dataset_shared.py" --validate "$OUTPUT_DIR"
