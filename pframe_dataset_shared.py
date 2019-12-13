@@ -64,7 +64,7 @@ def get_paths_for_frame_sequences(data_root, num_frames_per_sequence):
             seq.append((yi_p, ui_p, vi_p))
         if seq:
             assert len(seq) == num_frames_per_sequence
-            out.append(seq)
+            out.append(tuple(seq))
     return out
 
 
@@ -109,24 +109,29 @@ def get_validation_filenames():
 
 def validate_data(data_root):
     """ Check if for every frame we have Y, U, V files. """
-    # TODO: use new stuff
+    # check all files are available
     globs = get_yuv_globs(data_root)
     all_ps = tuple(sorted(glob.glob(g)) for g in globs)
     assert len(all_ps[0]) > 0, 'No files found in {}'.format(data_root)
     # get a set of prefixes for each Y, U, V by replacing the suffix of each path
     ys_pre, us_pre, vs_pre = (set(re.sub(suffix + '$', '', p) for p in ps)
                               for suffix, ps in zip(_SUFFIXES, all_ps))
-    if len(ys_pre) == len(us_pre) == len(vs_pre):
-        print('Found {} frames, and Y, U, V for each'.format(len(ys_pre)))
-        return 0
+    if not (len(ys_pre) == len(us_pre) == len(vs_pre)):
+        _print_validation_error(ys_pre, us_pre, vs_pre)
+        return 1
 
+    print('Found {} frames, and Y, U, V for each.'.format(len(ys_pre)))
+    # just checking that this runs:
+    ps = get_paths_for_frame_sequences(data_root, num_frames_per_sequence=2)
+    print('Found {} frame-sequences.'.format(len(ps)))
+    return 0
+
+
+def _print_validation_error(ys_pre, us_pre, vs_pre):
     all_frames = ys_pre | us_pre | vs_pre
     ys_missing, us_missing, vs_missing = (all_frames - pre for pre in (ys_pre, us_pre, vs_pre))
-
     print('ERROR:\nMissing Y for: {}\nMissing U for: {}\nMissing V for: {}'.format(
             ys_missing or '-', us_missing or '-', vs_missing or '-'))
-    return 1
-
 
 
 def main():

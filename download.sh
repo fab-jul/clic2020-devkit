@@ -1,47 +1,92 @@
 #!/bin/bash
 
 # Usage:
-# bash download.sh OUTPUT_DIR [--max_frames MAX_FRAMES]
+# bash download.sh OUTPUT_DIR [--max_videos MAX_VIDEOS] [--delete_zip]
 #
 # Uses gsutil if available, otherwise wget if available, otherwise curl. One must be available
 # Downloads are continued
 #
+# Tested on macOS
+#
+
+USAGE="USAGE: $0 OUTPUT_DIR [--max_videos MAX_VIDEOS] [--delete_zip]"
+
+# Argument Parsing -------------------------------------------------------------
 
 OUTPUT_DIR=$1
+shift
 if [[ -z $OUTPUT_DIR ]]; then
-  echo "USAGE: $0 OUTPUT_DIR [--max_frames MAX_FRAMES]"
+  echo $USAGE
   exit 1
 fi
 
-if [[ $2 == "--max_frames" ]]; then
-  MAX_FRAMES=$3
-  if [[ -z $MAX_FRAMES ]]; then
-    echo "Must give number MAX_FRAMES:"
-    echo "USAGE: $0 OUTPUT_DIR [--max_frames MAX_FRAMES]"
-    exit 1
-  fi
+while [[ $# -gt 0 ]]; do
+  ARG="$1"
+  case $ARG in
+    --max_videos)
+      MAX_VIDEOS=$2
+      if [[ -z $MAX_VIDEOS ]]; then
+        echo "Must give number MAX_VIDEOS:"
+        echo $USAGE
+        exit 1
+      fi
+      shift; shift;
+      continue
+      ;;
+    --delete_zip)
+      DELETE_ZIP=1
+      shift;
+      continue
+      ;;
+    *)
+      echo $USAGE
+      exit 1
+  esac
+done
+
+if [[ -n $DELETE_ZIP ]]; then
+  echo "WARN: --delete_zip given."
+  echo "  Will delete each .zip file after decoding."
+  echo "  This means less hard drive space used at any time, however,"
+  echo "  you can not cancel and resume the script anymore."
 fi
 
-VIDEO_URLS="$(pwd)/video_urls.txt"
-GSUTIL_URL=TODO
+
+# this is a bit fragile because macOS doesn't support readlink -f. Oh well.
+SCRIPT_DIR=$(dirname "$0")
+VIDEO_URLS="$SCRIPT_DIR/pframe_video_urls.txt"
+GSUTIL_URL="gs://clic2020_public/pframe_trainvaltest"
 PARALLEL_CONNECTIONS=16
 
+# Helper -----------------------------------------------------------------------
+
 function progress () {
-    NUM_FILES=$1
+    INFO=$1
+    NUM_FILES=$2
     COUNTER=0
     while read LINE; do
         COUNTER=$((COUNTER+1))
-        echo -ne "\rDownloading with $PARALLEL_CONNECTIONS connections; $COUNTER/$NUM_FILES; ...${LINE: -30};"
+        echo -ne "\r$INFO; $COUNTER/$NUM_FILES; ...${LINE: -30};"
     done
     echo ""
 }
 
 function download_gsutil() {
-  gsutil rsync $GSUTIL_URL $OUTPUT_DIR
+  mkdir -pv "$OUTPUT_DIR"
+  gsutil -m rsync $GSUTIL_URL "$OUTPUT_DIR"
 }
 
 function download_wget_or_curl() {
-  if [[ ! -f $VIDEO_URLS ]]; then
+  mkdir -pv "$OUTPUT_DIR"
+
+  # copying so that we can run all commands in $OUTPUTDIR (curl doesn't have a --prefix option)
+  cp -v "$VIDEO_URLS" "$OUTPUT_DIR"
+  VIDEO_URLS=$(basename "$VIDEO_URLS")
+
+  pushd $OUTPUT_DIR
+
+  # make sure this exists!
+  if [[ ! -f "$VIDEO_URLS" ]]; then
     echo "Error: $VIDEO_URLS is not a file."
     exit 1
   fi
@@ -60,24 +105,22 @@ function download_wget_or_curl() {
   fi
 
   # Start download
-  mkdir -p $OUTPUT_DIR
-  NUM_FILES=$(wc -l < $VIDEO_URLS)
-  echo $NUM_FILES
+  echo "Downloading to $OUTPUT_DIR..."
+  NUM_FILES=$(wc -l < "$VIDEO_URLS")
 
   function get_urls() {
-    if [[ -n $MAX_FRAMES ]]; then
-      cat $VIDEO_URLS | head -n$MAX_FRAMES
+    if [[ -n $MAX_VIDEOS ]]; then
+      cat "$VIDEO_URLS" | head -n$MAX_VIDEOS
     else
-      cat $VIDEO_URLS
+      cat "$VIDEO_URLS"
     fi
   }
 
-  echo "Downloading to $OUTPUT_DIR..."
-  pushd $OUTPUT_DIR
+  INFO="Downloading with $PARALLEL_CONNECTIONS connections"
   if [[ $WGET_AVAILABLE == 1 ]]; then
-    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} wget -c {} -q 2>&1 | progress $NUM_FILES
+    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} wget -c {} -q 2>&1 | progress "$INFO" $NUM_FILES
   else
-    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} curl -O {} -s -C - 2>&1 | progress $NUM_FILES
+    get_urls | xargs -t -n 1 -P $PARALLEL_CONNECTIONS -I{} curl -O {} -s -C - 2>&1 | progress "$INFO" $NUM_FILES
   fi
 
   popd
@@ -85,20 +128,38 @@ function download_wget_or_curl() {
 
 function unzip_all() {
   pushd $OUTPUT_DIR
+  # TODO(fabian) could add GNU parallel support here to make things faster
+  # TODO(fabian) could remove zips after unzipping?
   for f in *.zip; do
-    unzip -u $f
-  done
+    echo "$f"
+    unzip -qu $f
+    if [[ -n $DELETE_ZIP ]]; then
+      rm $f
+    fi
+  done | progress Unzipping $NUM_FILES
   popd
 }
 
-which gsutil
-if [[ $? == 0 ]]; then
+# Main -------------------------------------------------------------------------
+
+which gsutil >/dev/null
+# gsutil does not support $MAX_VIDEOS!
+if [[ $? == 0 && -z $MAX_VIDEOS ]]; then
   echo "Found gsutil, using it..."
   download_gsutil
 else
   download_wget_or_curl
-  unzip_all
 fi
 
+echo "Unzipping..."
+unzip_all
+
 echo "Done, validating..."
-python pframe_dataset_shared.py --validate $OUTPUT_DIR/frames
+python "$SCRIPT_DIR/pframe_dataset_shared.py" --validate "$OUTPUT_DIR"
+
+if [[ $? == 0 ]]; then
+  echo "All good!"
+  if [[ -z $DELETE_ZIP ]]; then
+    echo "You may now want to remove the *.zip files in $OUTPUT_DIR"
+  fi
+fi
