@@ -5,8 +5,8 @@ This is work in progress.
 Todos:
 - [x] Make sure PyTorch dataloader respects video boundaries
 - [x] Make sure TensorFlow dataloader respects video boundaries
-- [ ] Fix download.sh
-- [ ] Cleanup Baseline
+- [x] Fix download.sh
+- [ ] Finalize Baseline
 
 # clic2020-devkit
 
