@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+from baseline_torch import decode
+
+import os
+import glob
+
+
+def show_files():
+    return [p for p in os.listdir('.') if '.png' not in p]
+
+files = glob.glob('*.baseline')
+print('Found {} .basline files // {} .png files'.format(len(files), len(glob.glob('*.png'))))
+
+if len(files) == 0:
+    assert os.path.isfile('allframes.zip'), show_files()
+    os.system('unzip allframes.zip')
+
+    files = glob.glob('*.baseline')
+    print('Found {} .basline files // {} .png files'.format(len(files), len(glob.glob('*.png'))))
+
+    assert len(files) > 0, show_files()
+
+# files = os.listdir('.')
+# print([f for f in files if '.png' not in f])
+
+for f in files:
+    decode(f)

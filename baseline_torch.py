@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 
 Simple non-learned baseline.
@@ -19,11 +21,14 @@ Algorithm:
 # TODO: more like baseline_np.py actually
 
 import argparse
+import time
 from io import BytesIO
 from PIL import Image
-from pframe_dataset_torch import FramePairsDataset
+import os
+import pframe_dataset_shared
+
 import numpy as np
-import ms_ssim_np
+# import ms_ssim_np
 
 
 _MSSSIM_WEIGHTS = (1/1.5, .25/1.5, .25/1.5)
@@ -45,16 +50,53 @@ def decoder(frame1, frame2_compressed: bytes):
     return frame1 + (residual_normalized - 127) * 2
 
 
-def compress_folder(data_dir):
-    ds = FramePairsDataset(data_dir)
+def decode(p):
+    assert p.endswith('.baseline')
+    p2 = os.path.splitext(os.path.basename(p))[0] + '.png'
+    p1 = pframe_dataset_shared.get_previous_frame_path(p2)
+    assert os.path.isfile(p1)
+    with open(p, 'rb') as f_in:
+        b = f_in.read()
+    f2_reconstructed = decoder(np.array(Image.open(p1)), b)
+    Image.fromarray(f2_reconstructed).save(p2)
+
+
+def compress_folder(data_dir, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+
+    inputs, targets = pframe_dataset_shared.get_validation_filenames()
+    # ds = FramePairsDataset(data_dir, filter_names=pframe_dataset_shared.get_validation_filenames())
     # Make sure that we do not convert to torch!
-    ds.yuv_frames_dataset.image_to_tensor = lambda pic: np.array(pic)
-    N = len(ds)
+    # ds.yuv_frames_dataset.image_to_tensor = lambda pic: np.array(pic)
+    N = len(inputs)
     idxs = np.arange(N)  # TODO: remove, maybe average over videos?
     np.random.shuffle(idxs)
-    metrics = []
+    # metrics = []
+    skipping = set()
+    start = time.time()
     for count, i in enumerate(idxs):
-        (y1, u1, v1), (y2, u2, v2) = ds[i]
+        p1, p2 = os.path.join(data_dir, inputs[i]), os.path.join(data_dir, targets[i])
+        if not os.path.isfile(p1):
+            skipping.add(p1)
+            continue
+        if not os.path.isfile(p2):
+            skipping.add(p2)
+            continue
+
+        i1, i2 = np.array(Image.open(p1)), np.array(Image.open(p2))
+        # (y1, u1, v1), (y2, u2, v2) = ...
+
+        p_out = os.path.join(output_dir, os.path.splitext(os.path.basename(p2))[0] + '.baseline')
+        with open(p_out, 'wb') as f_out:
+            f_out.write(encoder(i1, i2))
+
+        if count > 0 and count % 50 == 0:
+            elapsed = time.time() - start
+            per_img = elapsed / count
+            remaining = (N - count) * per_img
+            print('\rWrote {}/{} files. Skipped {}. Time: {:.1f}s // {:.3e} per img // ~{:.1f}s remaining'.format(
+                    count, N, len(skipping), elapsed, per_img, remaining), end='', flush=True)
+        continue
 
         num_bytes = 0
         num_pixels = np.prod(y1.shape)
@@ -81,9 +123,10 @@ def _batch(c):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('data_dir')
+    p.add_argument('output_dir')
     flags = p.parse_args()
 
-    compress_folder(flags.data_dir)
+    compress_folder(flags.data_dir, flags.output_dir)
 
 
 if __name__ == '__main__':
