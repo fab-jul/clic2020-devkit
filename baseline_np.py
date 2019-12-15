@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 """
-
 Simple non-learned baseline.
 
 Input: Frame 1, Frame 2 (F1, F2)
@@ -23,16 +22,16 @@ Algorithm:
 import argparse
 import time
 from io import BytesIO
-from PIL import Image
 import os
 import glob
+from PIL import Image
+import numpy as np
+
 import pframe_dataset_shared
 
-import numpy as np
-# import ms_ssim_np
-
-
 _MSSSIM_WEIGHTS = (1/1.5, .25/1.5, .25/1.5)
+
+EXTENSION = 'baseline'
 
 
 def encoder(frame1, frame2):
@@ -52,7 +51,7 @@ def decoder(frame1, frame2_compressed: bytes):
 
 
 def decode(p):
-    assert p.endswith('.baseline')
+    assert p.endswith('.' + EXTENSION)
     p2 = os.path.splitext(os.path.basename(p))[0] + '.png'
     p1 = pframe_dataset_shared.get_previous_frame_path(p2)
     assert os.path.isfile(p1)
@@ -83,7 +82,7 @@ def compress_folder(data_dir, output_dir):
         i1, i2 = np.array(Image.open(p1)), np.array(Image.open(p2))
         # (y1, u1, v1), (y2, u2, v2) = ...
 
-        p_out = os.path.join(output_dir, os.path.splitext(os.path.basename(p2))[0] + '.baseline')
+        p_out = os.path.join(output_dir, os.path.splitext(os.path.basename(p2))[0] + '.' + EXTENSION)
         with open(p_out, 'wb') as f_out:
             f_out.write(encoder(i1, i2))
 
