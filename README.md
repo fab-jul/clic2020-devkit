@@ -1,16 +1,6 @@
-# Status
-
-This is work in progress.
-
-Todos:
-- [x] Make sure PyTorch dataloader respects video boundaries
-- [x] Make sure TensorFlow dataloader respects video boundaries
-- [x] Fix download.sh
-- [ ] Finalize Baseline
-
 # clic2020-devkit
 
-<!-- ## Downloading data
+## Downloading data
 
 To download all files, run:
 
@@ -20,19 +10,47 @@ bash download.sh path/to/data
 
 It will create a folder `path/to/data` and extract all frames there, into a structure like:
 
-```python
-TODO
+```
+video1/
+    video1_frame1_y.png
+    video1_frame1_u.png
+    video1_frame1_v.png
+    video1_frame2_y.png
+    video1_frame2_u.png
+    video1_frame2_v.png
+    ...
+video2/
+    video2_frame1_y.png
+    video2_frame1_u.png
+    video2_frame1_v.png
+    ...
 ```
 
-For this, one of `gsutil`, `wget`, or `curl` must be available. Downloads can be interrupted.
+For this, one of `gsutil`, `wget`, or `curl` must be available.
 
-TODO: Test `curl`
-
--->
+**NOTE**: The script first downloads all vidoes as .zip files, resulting in 380GB+ of data.
+Then all zips are decompressed one by one and subsequently deleted. If you interrupt the script
+while unpacking, and later re-run it, it will re-download those that were already unpacked. 
+To prevent this at the expense of more hard-drive space used, you can keep the zip files by passing `--no_delete_zip`.
 
 ## P-Frame Baseline
 
-*_Upcoming_*
+We implement a simple non-learned baseline in `baseline_np.py`. The algorithm can be described as follows:
+
+```
+ENCODE, given frame 2 (F2) given frame 1 (F1)
+  1. Calculate Residual_Normalized = (F2 - F1) // 2 + 127
+     (this is no in range {0, ..., 255}.
+      The idea of the //2 is to have 256 possible values, because
+      otherwise we would have 511 values.)
+  2. Compress Residual_Normalized with JPG
+  -> Bitstream
+DECODE, given F1 and Bitstream
+  1. get Residual_Normalized from JPG in Bistream
+  2. F2' = F1 + ( Residual_normalized - 127 ) * 2
+```
+
+The `run_baseline.sh` script describes how this would be used to create a submission to the challenge server.
 
 ## P-Frame Dataloading
 

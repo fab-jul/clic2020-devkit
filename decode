@@ -1,28 +1,49 @@
 #!/usr/bin/env python3
 
-from baseline_torch import decode
+from baseline_np import decode, EXTENSION
 
 import os
 import glob
+from zipfile import ZipFile
 
 
-def show_files():
-    return [p for p in os.listdir('.') if '.png' not in p]
+VALOUTZIP = 'valout.zip'
 
-files = glob.glob('*.baseline')
-print('Found {} .basline files // {} .png files'.format(len(files), len(glob.glob('*.png'))))
 
-if len(files) == 0:
-    assert os.path.isfile('allframes.zip'), show_files()
-    os.system('unzip allframes.zip')
+def get_files_info_string():
+    ps = os.listdir('.')
+    non_png = [p for p in ps if '.png' not in p]
+    png = [p for p in ps if '.png' in p]
+    return 'Found {} .png files and {}'.format(len(png), non_png)
 
-    files = glob.glob('*.baseline')
-    print('Found {} .basline files // {} .png files'.format(len(files), len(glob.glob('*.png'))))
 
-    assert len(files) > 0, show_files()
+def get_baseline_files():
+    assert os.path.isfile(VALOUTZIP), 'Expected {}. {}'.format(
+        VALOUTZIP, get_files_info_string())
 
-# files = os.listdir('.')
-# print([f for f in files if '.png' not in f])
+    print('Unzipping', VALOUTZIP, '...')
+    with ZipFile(VALOUTZIP) as zipfile:
+        zipfile.extractall()
 
-for f in files:
-    decode(f)
+    baseline_files = glob.glob('*.' + EXTENSION)
+
+    if len(baseline_files) == 0:
+        raise ValueError('No .{} files found! {}'.format(
+            EXTENSION, get_files_info_string()))
+
+    print('Found {} .{} files // {} .png files'.format(
+        len(baseline_files), EXTENSION, len(glob.glob('*.png'))))
+
+    return baseline_files
+
+
+def main():
+    baseline_files = get_baseline_files()
+    for f in baseline_files:
+        decode(f)
+
+
+if __name__ == '__main__':
+    main()
+
+

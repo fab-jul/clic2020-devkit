@@ -17,8 +17,6 @@ Algorithm:
       2. F2' = F1 + ( Residual_normalized - 127 ) * 2
 """
 
-# TODO: more like baseline_np.py actually
-
 import argparse
 import time
 from io import BytesIO
@@ -29,7 +27,6 @@ import numpy as np
 
 import pframe_dataset_shared
 
-_MSSSIM_WEIGHTS = (1/1.5, .25/1.5, .25/1.5)
 
 EXTENSION = 'baseline'
 
@@ -37,7 +34,6 @@ EXTENSION = 'baseline'
 def encoder(frame1, frame2):
     # Convert to long so that the substraction does not overflow
     residual_normalized = (frame2.astype(np.long) - frame1) // 2 + 127
-    # print(np.amax(residual_normalized), np.amin(residual_normalized))
     # Convert back to uint8
     residual_normalized = residual_normalized.astype(np.uint8)
     f = BytesIO()
@@ -64,6 +60,7 @@ def decode(p):
 def compress_folder(data_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
+    # These folders exists if validation.zip was downloaded.
     inputs = os.path.join(data_dir, 'inputs')
     targets = os.path.join(data_dir, 'targets')
     assert os.path.isdir(inputs), inputs
@@ -72,7 +69,7 @@ def compress_folder(data_dir, output_dir):
     inputs = sorted(glob.glob(os.path.join(inputs, '*.png')))
     targets = sorted(glob.glob(os.path.join(targets, '*.png')))
     assert len(inputs) == len(targets)
-    assert len(inputs) > 0
+    assert len(inputs) > 0, 'No inputs!'
 
     N = len(inputs)
     start = time.time()
@@ -80,7 +77,6 @@ def compress_folder(data_dir, output_dir):
         p2_expected = pframe_dataset_shared.get_frame_path(p1, offset=1)
         assert os.path.basename(p2_expected) == os.path.basename(p2), (p1, p2)
         i1, i2 = np.array(Image.open(p1)), np.array(Image.open(p2))
-        # (y1, u1, v1), (y2, u2, v2) = ...
 
         p_out = os.path.join(output_dir, os.path.splitext(os.path.basename(p2))[0] + '.' + EXTENSION)
         with open(p_out, 'wb') as f_out:
@@ -92,28 +88,6 @@ def compress_folder(data_dir, output_dir):
             remaining = (N - count) * per_img
             print('\rWrote {}/{} files. Time: {:.1f}s // {:.3e} per img // ~{:.1f}s remaining'.format(
                     count, N, elapsed, per_img, remaining), end='', flush=True)
-        continue
-
-        num_bytes = 0
-        num_pixels = np.prod(y1.shape)
-        ms_ssim = 0
-
-        for ms_ssim_weight, c1, c2 in zip(_MSSSIM_WEIGHTS, (y1, u1, v1), (y2, u2, v2)):
-            b = encoder(c1, c2)
-            num_bytes += len(b)
-            c2_decoded = decoder(c1, b)
-            ms_ssim_c = ms_ssim_np.MultiScaleSSIM(_batch(c1), _batch(c2_decoded))
-            ms_ssim += ms_ssim_weight * ms_ssim_c
-
-        bpp = num_bytes * 8 / num_pixels
-        metrics.append((bpp, ms_ssim))
-        print('{: 10d}/{}: {:.4f} bpp // {:.4f} weighted MS-SSIM'.format(count, N, bpp, ms_ssim))
-
-    # TODO output metrics
-
-
-def _batch(c):
-    return np.expand_dims(np.expand_dims(c, -1), 0)
 
 
 def main():
