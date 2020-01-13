@@ -5,9 +5,11 @@ from baseline_np import decode, EXTENSION
 import os
 import glob
 from zipfile import ZipFile
+import time
 
 
 VALOUTZIP = 'valout.zip'
+VALOUTDIR = 'valout'
 
 
 def get_files_info_string():
@@ -25,22 +27,32 @@ def get_baseline_files():
     with ZipFile(VALOUTZIP) as zipfile:
         zipfile.extractall()
 
-    baseline_files = glob.glob('*.' + EXTENSION)
+    # unzip happens to valout/
+    baseline_files = sorted(glob.glob(os.path.join(VALOUTDIR, '*.' + EXTENSION)))
 
     if len(baseline_files) == 0:
         raise ValueError('No .{} files found! {}'.format(
             EXTENSION, get_files_info_string()))
 
-    print('Found {} .{} files // {} .png files'.format(
-        len(baseline_files), EXTENSION, len(glob.glob('*.png'))))
+    png_files = sorted(glob.glob('*.png'))
+    print('Found {} .{} files // {} .png files ({})'.format(
+        len(baseline_files), EXTENSION, len(png_files),
+        list(zip(png_files, baseline_files))[:10]))
 
-    return baseline_files
+    return sorted(baseline_files)
 
 
 def main():
     baseline_files = get_baseline_files()
-    for f in baseline_files:
+    start = time.time()
+    for i, f in enumerate(baseline_files):
         decode(f)
+        if i > 0 and i % 100 == 0:
+            elapsed = time.time() - start
+            time_per_img = elapsed / i
+            print('Compressed {}. Average {}s/img'.format(
+                i, time_per_img))
+    print('Done')
 
 
 if __name__ == '__main__':

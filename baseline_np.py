@@ -28,16 +28,17 @@ import numpy as np
 import pframe_dataset_shared
 
 
-EXTENSION = 'baseline'
+EXTENSION = 'baseline.jpg'
 
 
 def encoder(frame1, frame2):
-    # Convert to long so that the substraction does not overflow
+    # Convert to long so that the subtraction does not overflow
     residual_normalized = (frame2.astype(np.long) - frame1) // 2 + 127
     # Convert back to uint8
     residual_normalized = residual_normalized.astype(np.uint8)
     f = BytesIO()
     Image.fromarray(residual_normalized).save(f, format='jpeg')
+
     return f.getvalue()
 
 
@@ -47,10 +48,14 @@ def decoder(frame1, frame2_compressed: bytes):
 
 
 def decode(p):
+    """
+    Assumes that the input frame corresponding to `p` is in the current working directory.
+    The output will be saved in the current working directory.
+    """
     assert p.endswith('.' + EXTENSION)
     p2 = os.path.splitext(os.path.basename(p))[0] + '.png'
     p1 = pframe_dataset_shared.get_previous_frame_path(p2)
-    assert os.path.isfile(p1)
+    assert os.path.isfile(p1), (p2, p1, p, len(glob.glob('*.png')))
     with open(p, 'rb') as f_in:
         b = f_in.read()
     f2_reconstructed = decoder(np.array(Image.open(p1)), b)
@@ -96,7 +101,8 @@ def main():
     p.add_argument('output_dir')
     flags = p.parse_args()
 
-    compress_folder(flags.data_dir, flags.output_dir)
+    compress_folder(os.path.expanduser(flags.data_dir),
+                    os.path.expanduser(flags.output_dir))
 
 
 if __name__ == '__main__':
