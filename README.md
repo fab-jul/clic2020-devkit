@@ -35,8 +35,9 @@ To prevent this at the expense of more hard-drive space used, you can keep the z
 
 ## P-Frame Baseline
 
-** Work In Progress ** (this does currently NOT work).
+**Work In Progress**
 
+<~--
 We implement a simple non-learned baseline in `baseline_np.py`. The algorithm can be described as follows:
 
 ```
@@ -53,6 +54,8 @@ DECODE, given F1 and Bitstream
 ```
 
 The `run_baseline.sh` script describes how this would be used to create a submission to the challenge server. It corresponds to the `P-frame (validation)` track on the server, which must be selected on [challenge.compression.cc](http://challenge.compression.cc) if you try to submit this. `run_baseline.sh` compresses all decoder and data files using zip to allow efficient uploads (some browsers hang if you try to upload 160000 files).
+
+-->
 
 ## P-Frame Dataloading
 
