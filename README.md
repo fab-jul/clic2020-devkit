@@ -37,7 +37,7 @@ To prevent this at the expense of more hard-drive space used, you can keep the z
 
 **Work In Progress**
 
-<~--
+<!--
 We implement a simple non-learned baseline in `baseline_np.py`. The algorithm can be described as follows:
 
 ```
