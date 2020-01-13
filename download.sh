@@ -72,20 +72,6 @@ function download_gsutil() {
 }
 
 function download_wget_or_curl() {
-  mkdir -pv "$OUTPUT_DIR"
-
-  # copying so that we can run all commands in $OUTPUTDIR (curl doesn't have a --prefix option)
-  cp -v "$VIDEO_URLS" "$OUTPUT_DIR"
-  VIDEO_URLS=$(basename "$VIDEO_URLS")
-
-  pushd $OUTPUT_DIR
-
-  # make sure this exists!
-  if [[ ! -f "$VIDEO_URLS" ]]; then
-    echo "Error: $VIDEO_URLS is not a file."
-    exit 1
-  fi
-
   # check wget or curl available
   which wget
   if [[ $? == 0 ]]; then
@@ -99,13 +85,36 @@ function download_wget_or_curl() {
     WGET_AVAILABLE=0
   fi
 
+
+  if [[ ! -f "$VIDEO_URLS" ]]; then
+    echo "Downloading $VIDEO_URLS..."
+    if [[ $WGET_AVAILABLE ]]; then
+      wget https://storage.googleapis.com/clic2020_public/static/pframe_video_urls.txt
+    else
+      curl -O https://storage.googleapis.com/clic2020_public/static/pframe_video_urls.txt
+    fi
+  fi
+
+  mkdir -pv "$OUTPUT_DIR"
+  # copying so that we can run all commands in $OUTPUTDIR (curl doesn't have a --prefix option)
+  cp -v "$VIDEO_URLS" "$OUTPUT_DIR"
+  VIDEO_URLS=$(basename "$VIDEO_URLS")
+
+  pushd $OUTPUT_DIR
+
+  # make sure this exists!
+  if [[ ! -f "$VIDEO_URLS" ]]; then
+    echo "Error: $VIDEO_URLS is not a file."
+    exit 1
+  fi
+
   # Start download
   echo "Downloading to $OUTPUT_DIR..."
   NUM_FILES=$(wc -l < "$VIDEO_URLS")
 
   function get_urls() {
     if [[ -n $MAX_VIDEOS ]]; then
-      cat "$VIDEO_URLS" | head -n$MAX_VIDEOS
+      head -n"$MAX_VIDEOS" "$VIDEO_URLS" 
     else
       cat "$VIDEO_URLS"
     fi
@@ -129,7 +138,7 @@ function unzip_all() {
     echo "$f"
     unzip -qu $f
     if [[ $DELETE_ZIP == 1 ]]; then
-      rm $f
+      rm "$f"
     fi
   done | progress Unzipping $NUM_FILES
   popd
