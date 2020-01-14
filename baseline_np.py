@@ -53,7 +53,7 @@ def decode(p):
     The output will be saved in the current working directory.
     """
     assert p.endswith('.' + EXTENSION)
-    p2 = os.path.splitext(os.path.basename(p))[0] + '.png'
+    p2 = os.path.basename(p).replace('.' + EXTENSION, '.png')
     p1 = pframe_dataset_shared.get_previous_frame_path(p2)
     assert os.path.isfile(p1), (p2, p1, p, len(glob.glob('*.png')))
     with open(p, 'rb') as f_in:

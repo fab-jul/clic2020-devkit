@@ -10,6 +10,7 @@ VALDIROUT=valout
 
 # get validation
 if [[ ! -d $VALDIR ]]; then
+  echo "Downloading validation.zip to $VALDIR"
   curl -O https://storage.googleapis.com/clic2020_public/pframe_valonly/validation.zip
   mkdir -p $VALDIR
   mv validation.zip $VALDIR
