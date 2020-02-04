@@ -3,18 +3,20 @@
 """
 Simple non-learned baseline.
 
-Input: Frame 1, Frame 2 (F1, F2)
-
-Algorithm:
-    Encode
-      1. Calculate Residual_Normalized = (F2 - F1) // 2 + 127
-         (this is no in range {0, ..., 255}. The idea of the //2 is to have 256 possible values, because
-          otherwise we would have 511 values.)
-      2. Compress Residual_Normalized with JPG
-      -> Bitstream
-    Decode, given F1 and Bitstream
-      1. get Residual_Normalized from JPG in Bistream
-      2. F2' = F1 + ( Residual_normalized - 127 ) * 2
+ENCODE: (function `encoder` below)
+  Inputs: frame 1 (F1) and frame 2 (F2).
+  Encode F2 given F1:
+  1. Calculate Residual_Normalized = (F2 - F1) // 2 + 127
+     (this is now in range {0, ..., 255}.
+      The idea of the //2 is to have 256 possible values, because
+      otherwise we would have 511 values.)
+  2. Compress Residual_Normalized with JPG
+  -> Save to Bitstream
+DECODE: (function `decoder` below)
+  Inputs: F1 and Bitstream
+  1. Get Residual_Normalized from JPG in Bistream
+  2. F2' = F1 + ( Residual_normalized - 127 ) * 2
+     (F2' is the reconstruction)
 """
 
 import argparse
@@ -28,6 +30,8 @@ import numpy as np
 import pframe_dataset_shared
 
 
+# Putting a .jpg in the extension means we can directly look at the results.
+# They are JPGs after all.
 EXTENSION = 'baseline.jpg'
 
 
@@ -48,12 +52,13 @@ def decoder(frame1, frame2_compressed: bytes):
 
 
 def decode(p):
-    """
+    """Return decoded image from `p`.
+
     Assumes that the input frame corresponding to `p` is in the current working directory.
     The output will be saved in the current working directory.
     """
     assert p.endswith('.' + EXTENSION)
-    p2 = os.path.splitext(os.path.basename(p))[0] + '.png'
+    p2 = os.path.basename(p).replace('.' + EXTENSION, '.png')
     p1 = pframe_dataset_shared.get_previous_frame_path(p2)
     assert os.path.isfile(p1), (p2, p1, p, len(glob.glob('*.png')))
     with open(p, 'rb') as f_in:
@@ -97,7 +102,8 @@ def compress_folder(data_dir, output_dir):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('data_dir')
+    p.add_argument('data_dir', help="Directory of data. Must contain a folder called "
+                                    "inputs and a folder called targets.")
     p.add_argument('output_dir')
     flags = p.parse_args()
 
