@@ -47,8 +47,7 @@ def show_torch():
 
 
 def show_tf_eager():
-    # tf.enable_eager_execution()
-
+    tf.enable_eager_execution()  # TODO: This is TF v1 only
     ds = ds_tf.frame_sequence_dataset('data')
     ds_merged = ds_tf.frame_sequence_dataset('data', merge_channels=True)
 
@@ -57,7 +56,7 @@ def show_tf_eager():
 
 
 def show_tf_graph():
-    # tf.disable_eager_execution()
+    tf.disable_eager_execution()  # TODO: This is TF v1 only
     d = ds_tf.frame_sequence_dataset('data')
     d_merged = ds_tf.frame_sequence_dataset('data', merge_channels=True)
 
