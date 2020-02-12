@@ -35,13 +35,18 @@ import pframe_dataset_shared
 EXTENSION = 'baseline.jpg'
 
 
+# Very low to get low bpp.
+JPG_QUALITY = 7
+
+
 def encoder(frame1, frame2):
     # Convert to long so that the subtraction does not overflow
     residual_normalized = (frame2.astype(np.long) - frame1) // 2 + 127
     # Convert back to uint8
     residual_normalized = residual_normalized.astype(np.uint8)
     f = BytesIO()
-    Image.fromarray(residual_normalized).save(f, format='jpeg')
+    # optimize=True optimizes Huffman tables.
+    Image.fromarray(residual_normalized).save(f, format='jpeg', quality=JPG_QUALITY, optimize=True)
 
     return f.getvalue()
 
@@ -83,21 +88,39 @@ def compress_folder(data_dir, output_dir):
 
     N = len(inputs)
     start = time.time()
+
+    bpps = []  # Bpps of individual images
+    total_bytes = 0  # Of all files
+    bytes_img = []  # Store bytes of Y, U, V
+
     for count, (p1, p2) in enumerate(zip(inputs, targets)):
         p2_expected = pframe_dataset_shared.get_frame_path(p1, offset=1)
         assert os.path.basename(p2_expected) == os.path.basename(p2), (p1, p2)
         i1, i2 = np.array(Image.open(p1)), np.array(Image.open(p2))
 
         p_out = os.path.join(output_dir, os.path.splitext(os.path.basename(p2))[0] + '.' + EXTENSION)
+        encoded = encoder(i1, i2)
+        bytes_img.append(len(encoded))
+        if '_y.png' in p1:  # Y always comes last!
+            assert len(bytes_img) == 3, len(bytes_img)
+            total_bytes += sum(bytes_img)
+            bpp = sum(bytes_img) * 8 / np.prod(i1.shape)
+            bpps.append(bpp)
+            bytes_img = []
         with open(p_out, 'wb') as f_out:
-            f_out.write(encoder(i1, i2))
+            f_out.write(encoded)
 
         if count > 0 and count % 50 == 0:
             elapsed = time.time() - start
             per_img = elapsed / count
             remaining = (N - count) * per_img
-            print('\rWrote {}/{} files. Time: {:.1f}s // {:.3e} per img // ~{:.1f}s remaining'.format(
-                    count, N, elapsed, per_img, remaining), end='', flush=True)
+            print(('\rQ={}: Wrote {}/{} files. Time: {:.1f}s // '
+                   '{:.3e} per img // {:.3f} bpp, {} bytes // '
+                   '~{:.1f}s remaining').format(
+                      JPG_QUALITY, count, N, elapsed, 
+                      per_img, np.mean(bpps), int(total_bytes), 
+                      remaining), end='', flush=True)
+    print()
 
 
 def main():
