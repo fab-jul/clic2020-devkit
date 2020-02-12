@@ -15,7 +15,7 @@ _COMPONENTS_RE_SUB = r'\1_{:05d}_\3'
 def get_yuv_globs(data_root):
     """
     Expected structure:
-    `root_dir`/
+    `data_root`/
         video1/
             video1_frame1_y.png
             video1_frame1_u.png

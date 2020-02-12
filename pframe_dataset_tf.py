@@ -42,15 +42,14 @@ def merge_channels_per_frame(*frames):
 
 def yuv_420_to_444(y, u, v):
     """ Convert Y, U, V, given in 420, to RGB 444. """
-    u, v = map(_upsample_nearest_neighbor, (u, v))  # upsample U, V
+    target_shape = tf.shape(y)[:2]  # Get H, W
+    u = _upsample_nearest_neighbor(u, target_shape)
+    v = _upsample_nearest_neighbor(v, target_shape)
     return tf.concat([y, u, v], -1)                 # merge
 
 
-def _upsample_nearest_neighbor(t, factor=2):
-    """ Upsample tensor `t`, given in H,W,C, by `factor`. """
-    t_shape = t.shape.as_list()  # expected to be H, W, C
-    assert len(t_shape) == 3
-    new_shape = tf.shape(t)[:2]  # just get H, W
-    new_shape *= tf.constant([factor, factor])
-    return tf.image.resize(t, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+def _upsample_nearest_neighbor(t, target_shape):
+    """ Upsample tensor `t`, given in H,W,C, to shape `target_shape`. """
+    return tf.image.resize(
+        t, target_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 

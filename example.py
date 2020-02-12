@@ -1,5 +1,7 @@
 """
 Code to test the dataset functions.
+
+Tested with TensorFlow v1 and PyTorch 1.0
 """
 
 import itertools
@@ -32,8 +34,8 @@ def visualize(image_pair, image_pair_444):
 
 
 def show_torch():
-    d = ds_torch.FrameSequenceDataset('data/frames')
-    d_merged = ds_torch.FrameSequenceDataset('data/frames', merge_channels=True)
+    d = ds_torch.FrameSequenceDataset('data')
+    d_merged = ds_torch.FrameSequenceDataset('data', merge_channels=True)
 
     for image_pair, image_pair_444 in itertools.islice(zip(d, d_merged), 5):
         visualize(image_pair, image_pair_444)
@@ -45,19 +47,18 @@ def show_torch():
 
 
 def show_tf_eager():
-    tf.enable_eager_execution()
-
-    ds = ds_tf.frame_sequence_dataset('data/frames')
-    ds_merged = ds_tf.frame_sequence_dataset('data/frames', merge_channels=True)
+    tf.enable_eager_execution()  # TODO: This is TF v1 only
+    ds = ds_tf.frame_sequence_dataset('data')
+    ds_merged = ds_tf.frame_sequence_dataset('data', merge_channels=True)
 
     for image_pair, image_pair_444 in itertools.islice(zip(ds, ds_merged), 5):
         visualize(image_pair, image_pair_444)
 
 
 def show_tf_graph():
-    tf.disable_eager_execution()
-    d = ds_tf.frame_sequence_dataset('data/frames')
-    d_merged = ds_tf.frame_sequence_dataset('data/frames', merge_channels=True)
+    tf.disable_eager_execution()  # TODO: This is TF v1 only
+    d = ds_tf.frame_sequence_dataset('data')
+    d_merged = ds_tf.frame_sequence_dataset('data', merge_channels=True)
 
     it = d.make_one_shot_iterator()
     ne = it.get_next()

@@ -86,7 +86,7 @@ function download_wget_or_curl() {
   fi
 
   echo "Downloading $VIDEO_URLS..."
-  if [[ $WGET_AVAILABLE ]]; then
+  if [[ $WGET_AVAILABLE == 1 ]]; then
     wget https://storage.googleapis.com/clic2020_public/static/pframe_video_urls.txt
   else
     curl -O https://storage.googleapis.com/clic2020_public/static/pframe_video_urls.txt
