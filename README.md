@@ -1,4 +1,8 @@
-# clic2020-devkit  
+# clic2021-devkit  
+
+❗️ Checkout the [clic2021-devkit](https://github.com/fab-jul/clic2021-devkit) repo for the 2021 challenge ❗️
+
+# clic2020-devkit [Deprecated] 
 
 The following helps working with the **P-frame challenge**.
 
