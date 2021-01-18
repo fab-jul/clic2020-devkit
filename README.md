@@ -1,4 +1,4 @@
-# clic2021-devkit  
+# Updated Version 
 
 ❗️ Checkout the [clic2021-devkit](https://github.com/fab-jul/clic2021-devkit) repo for the 2021 challenge ❗️
 
